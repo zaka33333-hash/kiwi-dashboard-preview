@@ -13,8 +13,13 @@
  *    served from cache instantly (fast + offline), refreshed in the background so
  *    a deploy still lands on the next load with no manual refresh.
  * The worker skipWaiting()s so a new version takes over promptly instead of
- * waiting for every tab to close; it does NOT force a reload, so a caisse sale in
- * progress is never interrupted — fresh assets are simply served on the next load. */
+ * waiting for every tab to close.
+ *
+ * DIVERGENCE VITRINE — dans le produit, le worker ne force PAS de rechargement :
+ * une vente en cours à la caisse ne doit jamais être coupée, et les fichiers
+ * frais arrivent simplement au chargement suivant. Cette copie-ci, elle, sert à
+ * être montrée : voir la version d'avant pendant un démarchage est le seul
+ * échec qui compte, donc l'activation renavigue les fenêtres. Voir activate(). */
 'use strict';
 var CACHE = 'kiwi-app-v220';
 var SHELL = [
