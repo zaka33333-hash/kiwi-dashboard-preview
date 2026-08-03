@@ -1,0 +1,506 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Kiwi · mobile layer
+ * The phone-version rebuild. Loaded last, gated entirely behind a single
+ * phone breakpoint so it never touches the desktop layout.
+ *
+ *   · App shell      — sidebar becomes an off-canvas drawer, single column
+ *   · Topbar         — compact flush header (hamburger · wordmark · alert)
+ *   · Bottom tab bar — native-app navigation, injected by mobile-nav.js
+ *   · Home sections  — hero, KPI band, charts, blocks reflow to one column
+ *   · Drawers        — side drawers go full-width; modals fit the viewport
+ *
+ * Breakpoint: 860px — covers every phone in any orientation plus small
+ * tablets, and kills the old broken 640–1100px stacked-sidebar zone.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bottom bar + hamburger are injected on every load; hidden until the
+ * phone breakpoint so the desktop layout is never affected. */
+.kw-tabbar, .kw-hamburger, .kw-topbar-brand, .kw-menu-backdrop { display: none; }
+
+@media (max-width: 860px) {
+
+  /* ─────────────── APP SHELL ─────────────── */
+  .app { grid-template-columns: minmax(0, 1fr); min-height: 100vh; }
+  /* min-width:0 — without it the grid item keeps its min-content width and
+   * the 1fr track balloons past the viewport (horizontal-scroll bug). */
+  .main { max-width: 100%; min-width: 0; }
+  /* Last-line safety net: never let the page scroll sideways.
+   * `clip` (not `hidden`) — `hidden` turns html/body into scroll
+   * containers, which breaks `position: sticky` on the topbar (iOS).
+   * `clip` clips the overflow without creating a scroll container. */
+  html, body { overflow-x: clip; max-width: 100%; }
+  /* NOTE: .app carries a transform (the reveal/lock animation), which makes
+   * it a containing block — a position:fixed sidebar inside it would be
+   * trapped in .app's scaled coordinate space. mobile-nav.js therefore moves
+   * the .sidebar element out to <body> on phones, so the rules below anchor
+   * it to the viewport. */
+  .container { padding: 16px 16px 124px; }   /* clears the floating capsule bar */
+
+  /* Hide the demo bar — the phone owner doesn't drive the demo clock */
+  .demo-bar { display: none !important; }
+
+  /* ─── Sidebar → off-canvas menu drawer ─── */
+  .sidebar {
+    position: fixed; top: 0; bottom: 0; inset-inline-start: 0;
+    width: 84vw; max-width: 320px; height: 100vh;
+    z-index: 1400;
+    transform: translateX(-102%);
+    transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1);
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+  }
+  [dir="rtl"] .sidebar { transform: translateX(102%); }
+  body.kw-menu-open .sidebar {
+    transform: none;
+    box-shadow: 0 0 80px -10px rgba(0, 0, 0, 0.6);
+  }
+  .kw-menu-backdrop {
+    display: block; position: fixed; inset: 0; z-index: 1390;
+    background: rgba(10, 15, 13, 0.55);
+    opacity: 0; pointer-events: none;
+    transition: opacity 300ms ease;
+  }
+  body.kw-menu-open .kw-menu-backdrop { opacity: 1; pointer-events: auto; }
+  body.kw-menu-open { overflow: hidden; }
+
+  /* ─────────────── TOPBAR — compact flush header ─────────────── */
+  .topbar {
+    margin: 0 !important;
+    border-radius: 0;
+    border-inline: 0;
+    border-top: 0;
+    top: 0 !important;
+    padding: 9px 12px;
+    padding-top: calc(9px + env(safe-area-inset-top, 0px));
+    z-index: 60;
+  }
+  .topbar > .topbar-inner { gap: 8px; position: relative; }
+  /* Desktop affordances that don't belong on a phone header */
+  .topbar .breadcrumb,
+  .topbar .search-big,
+  .topbar .ai-btn { display: none !important; }
+  .topbar .icon-btn[aria-label="Paramètres"] { display: none; }
+  /* Hamburger stays left, the alert bell is pushed to the right edge —
+   * the wordmark is absolutely centred between them. */
+  .topbar .icon-btn { margin-inline-start: auto; }
+
+  .kw-hamburger {
+    display: flex; align-items: center; justify-content: center;
+    width: 42px; height: 42px; flex-shrink: 0;
+    border: 1px solid var(--n-200); border-radius: 11px;
+    background: var(--surface); color: var(--ink); cursor: pointer;
+    transition: background 140ms;
+  }
+  .kw-hamburger:active { background: var(--paper-soft); }
+  /* Explicit icon size — an SVG with only a viewBox collapses to 0×0
+   * inside a flex container on iOS Safari (the blank-button bug). */
+  .kw-hamburger svg { width: 22px; height: 22px; display: block; }
+  .kw-topbar-brand {
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex; align-items: baseline; gap: 3px;
+    font-weight: 700; font-size: 21px; letter-spacing: -0.05em;
+    color: var(--ink);
+    background: none; border: 0; padding: 4px 8px; cursor: pointer;
+    font-family: inherit; line-height: 1;
+  }
+  .kw-topbar-brand:active { transform: translate(-50%, -50%) scale(0.94); }
+  .kw-topbar-brand i { width: 5px; height: 5px; background: var(--mint); border-radius: 50%; }
+
+  /* ─────────────── BOTTOM TAB BAR — floating Liquid Glass capsule ───────────────
+   * Ported from the serveur app (kiwi-serveur.html `.bt-capsule`) so the whole
+   * Kiwi phone experience shares one navigation language: a floating smoked-
+   * glass pill that content scrolls UNDER, with a bright glass lens that
+   * slides + rubber-bands between tabs (movePill() in mobile-nav.js).
+   * Fixed forest tint on purpose — dark glass in both themes, like the
+   * serveur bar and the iOS-27 sidebar (tokens would invert it). */
+  .kw-tabbar {
+    display: flex; justify-content: center;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1200;
+    padding: 6px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+    background: transparent;
+    pointer-events: none;
+  }
+  .kw-capsule {
+    pointer-events: auto;
+    position: relative;
+    display: flex; align-items: center; gap: 2px;
+    padding: 7px 9px;
+    border-radius: 999px;
+    background: rgba(11, 30, 21, 0.56);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    backdrop-filter: blur(28px) saturate(1.8);
+    box-shadow:
+      0 20px 48px -16px rgba(0, 0, 0, 0.55),
+      0 4px 12px -4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0.5px rgba(255, 255, 255, 0.45),
+      inset 0 -2px 3px -1px rgba(0, 0, 0, 0.25),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .kw-capsule { background: rgba(11, 30, 21, 0.93); }
+  }
+  /* the bright glass "lens" that slides + rubber-bands between tabs */
+  .kw-tab-pill {
+    position: absolute; top: 7px; left: 0;
+    height: calc(100% - 14px); width: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.24);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                0 2px 6px -2px rgba(0, 0, 0, 0.25);
+    transform: translateX(0);
+    transition: transform 310ms cubic-bezier(0.34, 1.45, 0.5, 1),
+                width 310ms cubic-bezier(0.34, 1.45, 0.5, 1);
+    z-index: 0; opacity: 0;
+  }
+  .kw-tab {
+    position: relative; z-index: 1;
+    flex: 0 0 auto;
+    width: 56px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: 0; cursor: pointer;
+    font: inherit;
+    color: rgba(255, 255, 255, 0.72);
+    transition: color 175ms ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .kw-tab svg {
+    width: 23px; height: 23px; stroke-width: 1.9;
+    transition: transform 200ms cubic-bezier(0.34, 1.45, 0.5, 1);
+  }
+  /* Icon-first like the serveur capsule — labels stay for screen readers. */
+  .kw-tab .kw-tab-l {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .kw-tab.on { color: #fff; }
+  .kw-tab.on svg { transform: translateY(-1px) scale(1.06); }
+  .kw-tab:active svg { transform: scale(0.86); }
+  /* Centre AI tab — merchant mark in a mint-lit lens, inline with the pill */
+  .kw-tab-ai .kw-tab-ico {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(150deg, var(--atlas), var(--riad));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                0 6px 16px -6px rgba(11, 110, 79, 0.7);
+    transition: transform 200ms cubic-bezier(0.34, 1.45, 0.5, 1);
+  }
+  .kw-tab-ai.on .kw-tab-ico { transform: translateY(-1px) scale(1.06); }
+  .kw-tab-ai:active .kw-tab-ico { transform: scale(0.9); }
+  .kw-tab-ai .kw-tab-ico img {
+    width: 19px; height: 19px;
+    filter: brightness(0) saturate(100%) invert(85%) sepia(31%) saturate(469%)
+      hue-rotate(70deg) brightness(102%) contrast(91%);
+  }
+  /* Center "+ Vente" bead — the merchant's #1 shop-floor action, thumb-centered.
+   * Inline SVG (not the filtered img) painted in bright mint on the green well. */
+  .kw-tab-sell .kw-tab-ico svg { width: 22px; height: 22px; stroke: #EAFFF4; }
+  .kw-tab-sell .kw-tab-l { color: var(--atlas); font-weight: 600; }
+  /* Live count chip (Commandes) — brand mint, calm not alarming */
+  .kw-tab-badge {
+    position: absolute; top: 4px; inset-inline-end: 7px;
+    min-width: 15px; height: 15px; padding: 0 4px;
+    border-radius: 999px;
+    background: var(--mint); color: #06371f;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+    box-shadow: 0 0 0 2px rgba(10, 28, 20, 0.9);
+    z-index: 2;
+  }
+  .kw-tab-badge[hidden] { display: none; }
+
+  /* ─────────────── HOME · PAGE HEAD + DATE RANGE ─────────────── */
+  .page-head { margin-bottom: 24px; }
+  .quick-acts { width: 100%; gap: 10px; }
+  .quick-acts .btn-slim { flex: 1; justify-content: center; }
+
+  .dash-date-range { gap: 14px; margin: 12px 0 26px; }
+  .dash-date-range .dr-label { font-size: 27px; letter-spacing: -0.03em; }
+  .dash-date-range .dr-sub { font-size: 12.5px; margin-top: 5px; }
+  .dr-pills {
+    width: 100%;
+    flex-wrap: nowrap; overflow-x: auto;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    /* Edge fades hint that the row scrolls (direction-safe: both ends). */
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 24px), transparent 100%);
+    padding-inline-start: 2px;
+  }
+  .dr-pills::-webkit-scrollbar { display: none; }
+  .dr-pill { white-space: nowrap; flex-shrink: 0; }
+
+  /* Hero LIVE chip — one line, never a stacked 3-row capsule */
+  .hero-today .live-badge { white-space: nowrap; flex-shrink: 0; }
+  /* Session caption drops to its own full-width line instead of cramming
+     four wrapped lines into the sliver of space beside the LIVE chip. */
+  .hero-left .greet { flex-wrap: wrap; }
+  .hero-left .meta { flex-basis: 100%; }
+
+  /* ─────────────── HOME · HERO ─────────────── */
+  .hero-today { padding: 52px 22px 30px; border-radius: 22px; }
+  .hero-grid { gap: 28px; }
+  /* 4 deltas across is too tight on a phone — lay them out 2×2 */
+  .hero-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 16px; }
+  .hero-breakdown .b .v { font-size: 16px; }
+
+  /* ─────────────── HOME · KPI BAND ─────────────── */
+  .kpi-band { grid-template-columns: 1fr 1fr; gap: 13px; }
+  .kpi-band-head { margin-bottom: 12px; }
+
+  /* ─────────────── HOME · ROWS + BLOCKS ─────────────── */
+  .row,
+  .row.r-2-1, .row.r-1-1, .row.r-3, .row.r-65-35 {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+  /* Hard guarantee: a grid/flex child keeps its min-content width unless
+   * told otherwise — that is what lets an inner row balloon the card past
+   * the viewport. Zeroing the minimum lets every card shrink to its column. */
+  .row, .row > .block, .block, .block > * { min-width: 0; }
+  .block-head { flex-wrap: wrap; gap: 8px; }
+
+  /* Consistent vertical rhythm — every top-level section gets the same
+   * generous gap so nothing reads as stuffed. */
+  .dash-standard > * { margin-bottom: 18px; }
+  .dash-standard > .kpi-band-head { margin-bottom: 12px; }
+
+  /* Integration cards — 1 column so each stays tappable */
+  .integ-grid { grid-template-columns: 1fr !important; }
+
+  /* Heatmap hour bars must shrink to the card width, not force overflow */
+  .hh-row { gap: 3px !important; }
+  .hh-row > * { flex: 1 1 0 !important; min-width: 0 !important; }
+
+  /* ─── Data tables ─── */
+  /* Generic tables stay scrollable with a pinned first column … */
+  .block table, .p-table {
+    display: block; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .p-table th, .p-table td {
+    padding: 11px 12px !important;
+    font-size: 12.5px !important;
+    white-space: nowrap;
+  }
+  .p-table th:first-child, .p-table td:first-child {
+    position: sticky; left: 0; background: var(--surface); z-index: 1;
+  }
+
+  /* … but the transactions table becomes a native list feed —
+   * each row a tappable card: method + amount, then client + time. */
+  .p-table--tx, .p-table--tx tbody { display: block; overflow: visible; }
+  .p-table--tx thead { display: none; }
+  .p-table--tx tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 12px; row-gap: 3px;
+    padding: 14px 2px !important;
+    border-bottom: 1px solid var(--n-200);
+    align-items: baseline;
+  }
+  .p-table--tx tbody tr { border-radius: 12px; }
+  .p-table--tx tbody tr:active {
+    background: color-mix(in srgb, var(--mint) 8%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--atlas) 12%, transparent);
+  }
+  .p-table--tx tbody td {
+    padding: 0 !important; border: 0 !important;
+    white-space: normal !important; position: static !important;
+  }
+  .p-table--tx td:nth-child(1) { grid-column: 2; grid-row: 2; text-align: right;
+    font-size: 11.5px !important; color: var(--n-500) !important;
+    background: transparent !important; }
+  .p-table--tx td:nth-child(2) { grid-column: 1; grid-row: 1; font-size: 14px !important; }
+  .p-table--tx td:nth-child(3) { grid-column: 1; grid-row: 2;
+    font-size: 12.5px !important; color: var(--n-500) !important; }
+  .p-table--tx td:nth-child(4) { grid-column: 2; grid-row: 1; text-align: right;
+    font-weight: 600; font-size: 15.5px !important; }
+  .p-table--tx td:nth-child(5),
+  .p-table--tx td:nth-child(6) { display: none; }
+
+  /* ─── Live-orders feed (Commandes en direct) → native 2-line rows ───
+   * The desktop feed-row is a 6-column grid (time · method · client ·
+   * amount · tip · menu) ~426px wide — far past a phone. Restack it to
+   * the same card pattern as the transactions table: method + amount on
+   * top, client + time below; tip and the ⋮ menu drop away (the whole
+   * row is already tappable). */
+  .feed > .feed-row {
+    grid-template-columns: 1fr auto !important;
+    grid-auto-rows: auto !important;
+    column-gap: 12px !important;
+    row-gap: 2px !important;
+    padding-block: 13px !important;
+    align-items: baseline;
+  }
+  .feed-row > .method { grid-column: 1; grid-row: 1; min-width: 0; }
+  .feed-row > .amt    { grid-column: 2; grid-row: 1; text-align: right; font-weight: 600; font-size: 15px; }
+  .feed-row > .ctx    { grid-column: 1; grid-row: 2; min-width: 0; font-size: 12.5px; color: var(--n-500); }
+  .feed-row > .t      { grid-column: 2; grid-row: 2; text-align: right; font-size: 11.5px; color: var(--n-500); }
+  .feed-row > .tip,
+  .feed-row > .more   { display: none; }
+
+  /* ─── Mix de paiement — donut stacks above its legend ─── */
+  .donut-row { flex-direction: column; align-items: center; gap: 18px; }
+  .donut-legend { width: 100%; flex: none; }
+
+  /* ─────────────── DRAWERS → NATIVE BOTTOM SHEETS ───────────────
+   * Non-fullpage drawers slide up from the bottom with rounded top
+   * corners + a grab handle — the iOS/Android sheet pattern, instead
+   * of a desktop panel sliding in from the side. interactive.js
+   * injects its drawer CSS after this file, so geometry needs
+   * !important to win the cascade. */
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage) .kiwi-drawer {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important; max-width: 100% !important;
+    height: 90vh !important; max-height: 90vh !important;
+    border-radius: 24px 24px 0 0 !important;
+    transform: translateY(101%) !important;
+    transition: transform 420ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+    box-shadow: 0 -18px 50px -12px rgba(10, 15, 13, 0.42) !important;
+    display: flex !important; flex-direction: column !important;
+  }
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage).in .kiwi-drawer {
+    transform: translateY(0) !important;
+  }
+  /* grab handle + breathing room at the top of the sheet */
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage) .kiwi-drawer-head {
+    position: relative; flex-shrink: 0;
+    padding: 26px 18px 14px !important;
+    touch-action: none;   /* the header is the swipe-to-dismiss grip */
+  }
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage) .kiwi-drawer-head::before {
+    content: ""; position: absolute; top: 9px; left: 50%; margin-left: -20px;
+    width: 40px; height: 4px; border-radius: 999px; background: var(--n-300);
+  }
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage) .kiwi-drawer-body {
+    flex: 1; min-height: 0; overflow-y: auto;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+    padding-inline: 18px !important;
+  }
+  .kiwi-drawer-backdrop:not(.kiwi-fullpage) .kiwi-drawer-foot {
+    flex-shrink: 0; flex-wrap: wrap; padding-inline: 18px !important;
+  }
+
+  /* Modals fit the viewport — the backdrop already adds 20px padding,
+   * so the modal must stay inside 100vw − 40px to avoid overflow. */
+  .kiwi-modal { width: auto !important; max-width: calc(100vw - 40px) !important; }
+  .kiwi-modal-body { max-height: 68vh !important; overflow-y: auto !important; }
+
+  /* Command palette — near full-width, inside the backdrop padding */
+  .kp { width: auto !important; max-width: calc(100vw - 40px) !important; }
+
+  /* Toasts — full-width band, kept clear of the notch */
+  .kiwi-toasts {
+    left: 12px !important; right: 12px !important;
+    top: calc(12px + env(safe-area-inset-top, 0)) !important;
+    max-width: none !important;
+  }
+  .kiwi-toast { min-width: 0 !important; }
+
+  /* ─────────────── ASSISTANT (Kiwi AI) on a phone ─────────────── */
+  .fa-thread { padding: 22px 16px 20px !important; }
+  .fa-dock { padding: 12px 14px 16px !important; }
+  .fa-msg.user .fa-bubble { max-width: 86% !important; }
+  .fa-msg.agent .fa-bubble { max-width: 100% !important; }
+  .fa-kpgrid button { padding: 13px 0 !important; }
+
+  /* ═══════════════ NATIVE-APP POLISH ═══════════════
+   * Elevation instead of hairline borders, touch-scaled type and
+   * targets, press feedback — so the dashboard reads as a real phone
+   * app, not a shrunk website. */
+
+  /* No website tap-highlight; no scroll rubber-band flash. */
+  body { overscroll-behavior-y: none; }
+  a, button, [data-action], [data-nav], .kpi-m, .kpi-c, .block, .integ-card,
+  .feed-row, .tx-row, .prod, .prod-row, .staff-row, .bench-row,
+  .dr-pill, .kb, .btn-slim, .kpi-customize, .loc-switch, .merchant {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ── Cards: soft elevation, no hairline borders ── */
+  .block, .integ-card {
+    border: 0 !important;
+    border-radius: 20px !important;
+    box-shadow: 0 1px 2px rgba(10, 15, 13, 0.05),
+                0 16px 32px -22px rgba(10, 15, 13, 0.24) !important;
+  }
+  .block { padding: 22px 18px !important; }
+  .kpi-m, .kpi-c {
+    border: 0 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 1px 2px rgba(10, 15, 13, 0.05),
+                0 12px 24px -20px rgba(10, 15, 13, 0.22) !important;
+    padding: 18px 16px !important;
+    transition: transform 130ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* breathing room inside cards: header clear of its content */
+  .block-head { margin-bottom: 14px; }
+  .block > .t { margin-bottom: 14px; }
+
+  /* ── Press feedback — the app responds to touch ── */
+  .kpi-m:active, .kpi-c:active, .integ-card:active { transform: scale(0.975); }
+  .feed-row:active, .tx-row:active, .prod:active, .prod-row:active,
+  .staff-row:active, .bench-row:active,
+  .integ-card:active {
+    background: color-mix(in srgb, var(--mint) 8%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--atlas) 12%, transparent);
+  }
+  .btn-slim:active, .kb:active { transform: scale(0.97); }
+
+  /* ── Confident section headings ── */
+  .block > .t, .block-head .t { font-size: 16.5px; font-weight: 600; letter-spacing: -0.012em; }
+
+  /* ── List rows — real touch targets ── */
+  .feed-row, .tx-row, .prod, .prod-row, .staff-row, .bench-row, .timeline-day {
+    min-height: 56px;
+  }
+
+  /* ── Buttons & pills — finger-sized ── */
+  .btn-slim, .kb { min-height: 44px; border-radius: 13px; }
+  .dr-pill { min-height: 38px; display: inline-flex; align-items: center; }
+  .kpi-customize { min-height: 38px; }
+  .icon-btn { width: 40px; height: 40px; }
+
+  /* ── Hero — premium elevated card ── */
+  .hero-today { box-shadow: 0 24px 48px -28px rgba(5, 48, 31, 0.7) !important; }
+
+  /* ── Post-unlock greeting — must never clip on a phone ──
+   * The desktop headline is one nowrap line at clamp(30–64px); on a phone
+   * "Bonjour Rachid, bonne journée." runs off the edge. Let it wrap and
+   * size it to the viewport. */
+  .kiwi-greet { padding-inline: 22px; }
+  .kiwi-greet h1 {
+    font-size: 27px;
+    white-space: normal;
+    line-height: 1.18;
+  }
+
+  /* ── Performance-ranking cards (Équipe · Classement) ──
+   * Desktop is a 4-up flex row (rank · avatar · body · badge). On a phone
+   * the flexible body collapses to ~60px and the name shatters into
+   * overlapping fragments. Restack: rank + avatar + body across the top,
+   * the badge on its own line below. */
+  .eq-rank {
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas: "num av body" "badge badge badge";
+    column-gap: 12px;
+    row-gap: 10px;
+    align-items: center;
+  }
+  .eq-rank > .eq-rank-num   { grid-area: num; }
+  .eq-rank > .eq-av         { grid-area: av; }
+  .eq-rank > .eq-rank-body  { grid-area: body; min-width: 0; }
+  .eq-rank > .eq-rank-badge { grid-area: badge; justify-self: start; }
+  .eq-rank-name { white-space: normal; }
+  .eq-rank-name .rr { background: transparent !important; }
+
+}
+
+/* Only genuinely tiny phones (≤340px, e.g. iPhone SE 1st-gen) drop to a
+ * single column — 375px is mainstream and keeps the 2-up KPI grid. */
+@media (max-width: 340px) {
+  .kpi-band { grid-template-columns: 1fr; }
+  .fa-stats { grid-template-columns: 1fr !important; }
+}

@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Kiwi · dashboard polish layer
+ * Micro-interactions, depth and motion refinement that make the owner
+ * dashboard feel like a finished product rather than a prototype.
+ * Loaded last so it refines — never fights — the core design system.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root { --ease-out: cubic-bezier(0.32, 0.72, 0, 1); }
+
+/* ─── Accessibility: honour the OS "reduce motion" setting ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Accessibility: skip-to-content — invisible until keyboard-focused ───
+ * Fixed brand hexes on purpose: theme tokens invert in dark mode and this
+ * pill must stay readable in both themes. */
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 10001;
+  background: var(--atlas); color: var(--paper);
+  padding: 10px 16px; border-radius: 10px;
+  font: 500 13.5px/1 var(--sans); letter-spacing: -0.005em;
+  text-decoration: none;
+  transform: translateY(-200%); opacity: 0;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.skip-link:focus-visible {
+  transform: translateY(0); opacity: 1;
+  outline: 2px solid #7DF2B0; outline-offset: 2px;
+}
+
+/* ─── KPI tiles — they expand on click, so they lift on hover ─── */
+.kpi-m, .kpi-c {
+  transition: transform 220ms var(--ease-out),
+              box-shadow 220ms var(--ease-out),
+              border-color 220ms var(--ease-out) !important;
+  cursor: pointer;
+}
+.kpi-m:hover, .kpi-c:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -16px rgba(10, 15, 13, 0.22);
+}
+.kpi-m:active, .kpi-c:active { transform: translateY(0); }
+
+/* ─── Integration cards — clickable, so a gentle lift ─── */
+.integ-card {
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  cursor: pointer;
+}
+.integ-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px -16px rgba(10, 15, 13, 0.2);
+}
+
+/* ─── Buttons — uniform easing + a real press response ─── */
+.btn, .btn-slim, .kb, .dr-pill, .instant, button[data-action] {
+  transition: transform 140ms var(--ease-out),
+              background 170ms var(--ease-out),
+              color 170ms var(--ease-out),
+              border-color 170ms var(--ease-out),
+              box-shadow 170ms var(--ease-out);
+}
+.btn:active, .btn-slim:active, .kb:active,
+.instant:active, button[data-action]:active { transform: scale(0.972); }
+
+/* ─── List rows — the hover is a soft lens wash, not an opaque slab:
+ * rounded, mint-tinted with a hairline ring, and the row leans toward the
+ * cursor. Same vocabulary as the liquid lens. The flush rows (inline
+ * padding 0 in their base styles) get breathing room via padding +
+ * negative margin, so the wash extends past the text without the content
+ * shifting; !important because the page's inline <style> loads after this
+ * refinement layer. .feed-row keeps its own padding geometry. ─── */
+.prod-row, .staff-row, .bench-row {
+  padding-inline: 10px !important;
+  margin-inline: -10px;
+}
+.feed-row, .tx-row, .staff-row, .prod, .prod-row, .bench-row {
+  border-radius: 12px;
+  transition: background 200ms ease, box-shadow 200ms ease,
+              transform 220ms var(--ease-out);
+  cursor: pointer;
+}
+.feed-row:hover, .tx-row:hover, .staff-row:hover,
+.prod:hover, .prod-row:hover, .bench-row:hover {
+  background: color-mix(in srgb, var(--mint) 8%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--atlas) 12%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transform: translateX(3px);
+}
+/* .feed-row's inline transition list lacks transform, so a translate would
+ * snap there — the design-2026 layer (active on every passcode) supplies its
+ * own animated lean for feed rows instead. */
+.feed-row:hover { transform: none; }
+[dir="rtl"] :is(.tx-row, .staff-row, .prod, .prod-row, .bench-row):hover {
+  transform: translateX(-3px);
+}
+:is(.feed-row, .tx-row, .staff-row, .prod, .prod-row, .bench-row):active {
+  transform: scale(0.99);
+}
+html[data-theme="dark"] :is(.feed-row, .tx-row, .staff-row, .prod, .prod-row, .bench-row):hover {
+  background: color-mix(in srgb, var(--mint) 7%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mint) 14%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.feed-row, .tx-row, .staff-row, .prod, .prod-row, .bench-row):hover { transform: none; }
+}
+
+/* ─── Action links (the "→" links) — deepen, never dim ─── */
+a[data-action] { transition: color 150ms var(--ease-out); }
+a[data-action]:hover { color: var(--atlas-700, #08553D); }
+
+/* ─── Sidebar nav — smoother, with a hairline press ─── */
+.sidebar nav a { transition: background 160ms var(--ease-out), color 160ms var(--ease-out); }
+.sidebar nav a:active { transform: scale(0.99); }
+
+/* ─── Topbar icon buttons ─── */
+.icon-btn { transition: background 160ms var(--ease-out), transform 140ms var(--ease-out); }
+.icon-btn:hover { background: var(--paper-soft); }
+.icon-btn:active { transform: scale(0.92); }
+
+/* ─── Focus — the single global ring is owned by tokens.css; this
+   layer only carries per-component offset tweaks (was a duplicate
+   global :focus-visible rule that silently overrode the token). ─── */
+.kpi-m:focus-visible, .kpi-c:focus-visible, .integ-card:focus-visible { outline-offset: 3px; }
+
+/* ─── Drawer & menu close buttons — consistent press ─── */
+.kiwi-drawer-close:hover { border-color: var(--n-400); color: var(--ink); }
+.kiwi-drawer-close:active { transform: scale(0.92); }
+
+/* ─── Greeting flash — keep the editorial line inside the viewport ───
+ * (font-size is clamped in dashboard.html; this is the wrap safety net) ─── */
+.kiwi-greet-inner { max-width: 94vw; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * Section reveal — the landing page's signature fade-and-rise, brought to
+ * the dashboard. Each top-level section settles in with the Apple glide
+ * easing, gently staggered, so the dashboard *arrives* rather than just
+ * appears.
+ *
+ * Pure CSS, gated entirely on the dashboard's own reveal state
+ * (.app loses .kw-app-hidden once the PIN lock + greeting clear). The
+ * animation uses fill-mode `both`, so a section always ends fully visible
+ * — it can never get stuck hidden, and it never animates behind the lock.
+ * The global reduced-motion block above collapses the animation to an
+ * instant, so it degrades gracefully.
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ease-glide: cubic-bezier(0.16, 1, 0.30, 1);    /* Apple — fast start, long settle */
+  --ease-spring: cubic-bezier(0.34, 1.45, 0.5, 1);
+}
+
+@keyframes kd-rise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.app:not(.kw-app-hidden) .dash-standard > * {
+  animation: kd-rise 720ms var(--ease-glide) both;
+}
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(1)    { animation-delay: 280ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(2)    { animation-delay: 365ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(3)    { animation-delay: 450ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(4)    { animation-delay: 535ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(5)    { animation-delay: 620ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(6)    { animation-delay: 705ms; }
+.app:not(.kw-app-hidden) .dash-standard > *:nth-child(n+7)  { animation-delay: 790ms; }
