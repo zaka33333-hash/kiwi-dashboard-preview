@@ -16,7 +16,7 @@
  * waiting for every tab to close; it does NOT force a reload, so a caisse sale in
  * progress is never interrupted — fresh assets are simply served on the next load. */
 'use strict';
-var CACHE = 'kiwi-app-v219';
+var CACHE = 'kiwi-app-v220';
 var SHELL = [
   '/dashboard.html',
   '/kiwi-caisse.html',
@@ -209,10 +209,31 @@ self.addEventListener('install', function (e) {
   }));
 });
 
+// VITRINE UNIQUEMENT — ne pas reporter tel quel dans le produit.
+//
+// Un visiteur qui revient reçoit toujours UNE page périmée : l'ancien worker
+// sert les fichiers de ce chargement-là, le nouveau ne prend la main qu'après.
+// Sur une caisse, recharger d'autorité couperait une vente en cours, donc le
+// produit garde ce chargement de retard et le rattrape au suivant. Ici, la
+// vitrine n'existe que pour être montrée : un démarchage qui affiche l'avant-
+// dernière version est le seul échec qui compte. Le rechargement ne part
+// qu'à l'activation d'un CACHE au nom neuf, soit une fois par déploiement.
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (keys) {
-    return Promise.all(keys.map(function (k) { return k === CACHE ? null : caches.delete(k); }));
-  }).then(function () { return self.clients.claim(); }));
+    var stale = keys.filter(function (k) { return k !== CACHE; });
+    return Promise.all(stale.map(function (k) { return caches.delete(k); }))
+      .then(function () { return self.clients.claim(); })
+      .then(function () {
+        // Rien à rattraper si aucun cache antérieur n'existait : c'est une
+        // première visite, la page tient déjà les fichiers du réseau.
+        if (!stale.length) return;
+        return self.clients.matchAll({ type: 'window' }).then(function (list) {
+          return Promise.all(list.map(function (c) {
+            try { return c.navigate(c.url); } catch (_) { return null; }
+          }));
+        });
+      });
+  }));
 });
 
 // Kept for compatibility with any lingering "Rafraîchir" nudge that still posts
