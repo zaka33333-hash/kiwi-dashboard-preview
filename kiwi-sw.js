@@ -21,7 +21,7 @@
  * être montrée : voir la version d'avant pendant un démarchage est le seul
  * échec qui compte, donc l'activation renavigue les fenêtres. Voir activate(). */
 'use strict';
-var CACHE = 'kiwi-app-v221';
+var CACHE = 'kiwi-app-v222';
 var SHELL = [
   '/dashboard.html',
   '/kiwi-caisse.html',
