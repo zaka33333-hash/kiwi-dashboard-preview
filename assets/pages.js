@@ -10,112 +10,6 @@
   const { toast, modal, drawer, handlers, confetti } = window.Kiwi;
 
   const trLang = () => (window.KiwiI18n?.getLang?.() || 'fr');
-  const isRealSession = () => {
-    try { return !!window.KiwiEnv?.isReal?.(); } catch (_) { return false; }
-  };
-  const usesOwnData = () => {
-    if (isRealSession()) return true;
-    try { return !!window.KiwiVenue?.isCustom?.(); } catch (_) { return false; }
-  };
-  const pageEsc = (v) => String(v == null ? '' : v)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  const EMPTY_COPY = {
-    fr: {
-      terminals: ['Aucun terminal vérifié', 'Les terminaux apparaîtront ici quand une source Kiwi les aura associés à cet établissement.'],
-      settlements: ['Aucun règlement vérifié', 'Aucun flux de règlement réel n’est disponible pour cet établissement.'],
-      compliance: ['Aucune donnée de conformité vérifiée', 'Les contrôles et audits apparaîtront ici quand leur source sera connectée.'],
-      team: ['Aucune donnée d’équipe vérifiée', 'Ajoutez ou synchronisez votre équipe pour afficher ses membres et son activité.'],
-      tables: ['Aucune donnée de salle vérifiée', 'Configurez votre plan de salle pour afficher vos tables et additions.'],
-      menu: ['Aucune donnée de menu vérifiée', 'Ajoutez ou synchronisez votre catalogue pour afficher vos articles.'],
-      kds: ['Aucune commande cuisine vérifiée', 'Les commandes apparaîtront ici quand elles seront envoyées au KDS.'],
-      stock: ['Aucune donnée de stock vérifiée', 'Ajoutez ou synchronisez votre inventaire pour afficher les niveaux réels.'],
-      reservations: ['Aucune réservation vérifiée', 'Les réservations apparaîtront ici quand une source réelle sera connectée.'],
-      payroll: ['Aucune donnée de paie vérifiée', 'Les heures, effectifs et montants apparaîtront ici quand la paie sera configurée.'],
-    },
-    en: {
-      terminals: ['No verified terminals', 'Terminals will appear here once a Kiwi source links them to this venue.'],
-      settlements: ['No verified settlements', 'No live settlement feed is available for this venue.'],
-      compliance: ['No verified compliance data', 'Checks and audits will appear here once their source is connected.'],
-      team: ['No verified team data', 'Add or sync your team to show its members and activity.'],
-      tables: ['No verified floor data', 'Configure your floor plan to show your tables and bills.'],
-      menu: ['No verified menu data', 'Add or sync your catalogue to show your items.'],
-      kds: ['No verified kitchen orders', 'Orders will appear here once they are sent to the KDS.'],
-      stock: ['No verified stock data', 'Add or sync your inventory to show actual levels.'],
-      reservations: ['No verified reservations', 'Reservations will appear here once a live source is connected.'],
-      payroll: ['No verified payroll data', 'Hours, staff and amounts will appear here once payroll is configured.'],
-    },
-    ar: {
-      terminals: ['لا توجد أجهزة مؤكدة', 'ستظهر الأجهزة هنا بعد ربطها بهذا الفرع من مصدر Kiwi.'],
-      settlements: ['لا توجد تسويات مؤكدة', 'لا يتوفر تدفق تسويات فعلي لهذا الفرع.'],
-      compliance: ['لا توجد بيانات امتثال مؤكدة', 'ستظهر الفحوصات والتدقيقات بعد ربط مصدرها.'],
-      team: ['لا توجد بيانات فريق مؤكدة', 'أضف فريقك أو زامنه لعرض أعضائه ونشاطه.'],
-      tables: ['لا توجد بيانات قاعة مؤكدة', 'اضبط مخطط القاعة لعرض الطاولات والفواتير.'],
-      menu: ['لا توجد بيانات قائمة مؤكدة', 'أضف الكتالوج أو زامنه لعرض العناصر.'],
-      kds: ['لا توجد طلبات مطبخ مؤكدة', 'ستظهر الطلبات هنا بعد إرسالها إلى شاشة المطبخ.'],
-      stock: ['لا توجد بيانات مخزون مؤكدة', 'أضف المخزون أو زامنه لعرض المستويات الفعلية.'],
-      reservations: ['لا توجد حجوزات مؤكدة', 'ستظهر الحجوزات هنا بعد ربط مصدر فعلي.'],
-      payroll: ['لا توجد بيانات أجور مؤكدة', 'ستظهر الساعات والموظفون والمبالغ بعد إعداد الأجور.'],
-    },
-  };
-  function realEmptyDrawer(title, kind, width = 680) {
-    const L = EMPTY_COPY[trLang()] || EMPTY_COPY.fr;
-    const c = L[kind] || L.transactions;
-    return drawer({
-      title,
-      subtitle: '',
-      width,
-      body: `<div data-real-empty="${pageEsc(kind)}" style="padding:48px 18px;text-align:center;">
-        <div style="font-size:15px;font-weight:600;color:var(--ink);">${pageEsc(c[0])}</div>
-        <div style="font-size:12.5px;color:var(--n-500);line-height:1.55;max-width:430px;margin:7px auto 0;">${pageEsc(c[1])}</div>
-      </div>`,
-    });
-  }
-  function renderRealTransactions(T) {
-    const lang = trLang();
-    const L = {
-      fr: { empty: 'Aucune vente aujourd’hui.', unavailable: 'La source de ventes de cet établissement n’est pas disponible.', detail: 'DÉTAIL', sale: 'Vente', status: 'Enregistrée', methods: { cash: 'Espèces', card: 'Carte', tap: 'Kiwi Tap', qr: 'QR Wallet', wallet: 'Kiwi Wallet', link: 'Lien de paiement', delivery: 'Livraison' } },
-      en: { empty: 'No sales today.', unavailable: 'This venue’s sales source is unavailable.', detail: 'DETAIL', sale: 'Sale', status: 'Recorded', methods: { cash: 'Cash', card: 'Card', tap: 'Kiwi Tap', qr: 'QR Wallet', wallet: 'Kiwi Wallet', link: 'Payment link', delivery: 'Delivery' } },
-      ar: { empty: 'لا توجد مبيعات اليوم.', unavailable: 'مصدر مبيعات هذا الفرع غير متوفر.', detail: 'التفاصيل', sale: 'بيع', status: 'مسجلة', methods: { cash: 'نقدًا', card: 'بطاقة', tap: 'Kiwi Tap', qr: 'QR Wallet', wallet: 'Kiwi Wallet', link: 'رابط دفع', delivery: 'توصيل' } },
-    }[lang] || null;
-    const venue = (() => { try { return window.KiwiVenue?.getVenue?.(); } catch (_) { return undefined; } })();
-    const hasSource = typeof window.KiwiSales?.list === 'function';
-    let sales = [];
-    if (hasSource) {
-      try { sales = window.KiwiSales.list(venue) || []; } catch (_) { sales = []; }
-    }
-    const start = new Date(); start.setHours(0, 0, 0, 0);
-    const end = start.getTime() + 86400000;
-    const rows = sales.filter((s) => {
-      const ts = +(s && s.ts) || 0;
-      return ts >= start.getTime() && ts < end && Number(s.amount) >= 0;
-    }).slice().reverse();
-    const total = rows.reduce((sum, s) => sum + (+s.amount || 0), 0);
-    const avg = rows.length ? Math.round(total / rows.length) : 0;
-    const fmt = (n, digits = 0) => Number(n || 0).toLocaleString(lang === 'ar' ? 'ar-MA' : 'fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
-    const empty = hasSource ? L.empty : L.unavailable;
-    const r = drawer({
-      title: T.transactionsTitle,
-      subtitle: rows.length ? T.transactionsSubtitle(rows.length, fmt(total)) : empty,
-      width: 920,
-      body: rows.length ? `
-        <div class="p-hero">
-          <div class="l">${pageEsc(T.transactionsHeroLabel)}</div>
-          <div class="big">${pageEsc(fmt(total))} <span style="font-size:18px;opacity:.7;">MAD</span></div>
-          <div class="sub">${pageEsc(T.transactionsHeroSub(rows.length, avg))}</div>
-        </div>
-        <table class="p-table" data-real-transactions>
-          <thead><tr><th>${pageEsc(T.transactionsThTime)}</th><th>${pageEsc(T.transactionsThMethod)}</th><th>${pageEsc(L.detail)}</th><th class="right">${pageEsc(T.transactionsThAmount)}</th><th>${pageEsc(T.transactionsThStatus)}</th></tr></thead>
-          <tbody>${rows.map((s) => {
-            const d = new Date(+s.ts || 0);
-            const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-            const method = L.methods[String(s.method || '')] || L.sale;
-            return `<tr><td class="mono">${pageEsc(time)}</td><td><b>${pageEsc(method)}</b></td><td style="color:var(--n-600);">${pageEsc(s.label || L.sale)}</td><td class="mono right">${pageEsc(fmt(s.amount, 2))}</td><td><span class="chip ok">${pageEsc(L.status)}</span></td></tr>`;
-          }).join('')}</tbody>
-        </table>` : `<div data-real-empty="transactions" style="padding:48px 18px;text-align:center;font-size:14px;font-weight:600;color:var(--ink);">${pageEsc(empty)}</div>`,
-    });
-    r.el.querySelector('.kiwi-drawer').classList.add('page-xl');
-    return r;
-  }
 
   const pageTranslations = {
     fr: {
@@ -1172,7 +1066,6 @@
   handlers['nav-transactions'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return renderRealTransactions(T);
     const methods = [
       { m: 'visa', n: 'Visa', mask: '4291' },
       { m: 'mc', n: 'Mastercard', mask: '7820' },
@@ -1238,7 +1131,6 @@
   handlers['nav-terminaux'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.terminalsTitle, 'terminals');
     drawer({
       title: T.terminalsTitle,
       subtitle: T.terminalsSubtitle(3, 2),
@@ -1318,7 +1210,6 @@
   handlers['nav-reglements'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.settlementsTitle, 'settlements');
     const cal = [];
     const dow = T.settlementsDow;
     for (let i = 0; i < 2; i++) cal.push({ pad: true });
@@ -1391,7 +1282,6 @@
   handlers['nav-conformite'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.complianceTitle, 'compliance');
     drawer({
       title: T.complianceTitle,
       subtitle: T.complianceSubtitle,
@@ -1443,7 +1333,6 @@
   handlers['nav-equipe'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.teamTitle, 'team', 920);
     drawer({
       title: T.teamTitle,
       subtitle: T.teamSubtitle(8, 4),
@@ -1492,7 +1381,6 @@
   handlers['nav-tables'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.tablesModalTitle, 'tables', 920);
     modal({
       tag: T.tablesModalTag,
       title: T.tablesModalTitle,
@@ -1568,7 +1456,6 @@
   handlers['nav-menu'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.menuTitle, 'menu', 920);
     drawer({
       title: T.menuTitle,
       subtitle: T.menuSubtitle(48, 4, 12),
@@ -1646,7 +1533,6 @@
   handlers['nav-kds'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.kdsTitle, 'kds', 920);
     modal({
       tag: T.kdsTag,
       title: T.kdsTitle,
@@ -1717,7 +1603,6 @@
   handlers['nav-stock'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.stockTitle, 'stock', 920);
     drawer({
       title: T.stockTitle,
       subtitle: T.stockSubtitle,
@@ -1809,7 +1694,6 @@
   handlers['nav-reservations'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.reservationsTitle, 'reservations', 920);
     const r = drawer({
       title: T.reservationsTitle,
       subtitle: T.reservationsSubtitle,
@@ -2088,7 +1972,6 @@
   handlers['nav-payroll'] = () => {
     const lang = trLang();
     const T = pageTranslations[lang] || pageTranslations.fr;
-    if (usesOwnData()) return realEmptyDrawer(T.payrollTitle, 'payroll', 920);
     const r = drawer({
       title: T.payrollTitle,
       subtitle: T.payrollSubtitle,
@@ -2303,14 +2186,8 @@
   };
   handlers['edit-shifts'] = () => toast(tr({fr:'Éditeur de planning', en:'Schedule editor', ar:'محرر الجداول الزمنية'}), { type: 'info', desc: tr({fr:'Glissez les blocs ou cliquez une cellule pour ouvrir le détail.', en:'Drag blocks or click a cell to open the detail.', ar:'اسحب المربعات أو انقر على خلية لفتح التفاصيل.'}) });
   handlers['edit-tip-rule'] = () => toast(tr({fr:'Règle de partage des pourboires', en:'Tip sharing rule', ar:'قاعدة توزيع البقشيش'}), { type: 'info', desc: tr({fr:'Modifiez les pourcentages par poste ou la base de calcul.', en:'Edit the percentages per role or the calculation base.', ar:'عدّل النسب حسب المنصب أو أساس الحساب.'}) });
-  handlers['distribute-tips'] = () => {
-    if (usesOwnData()) return toast(tr({ fr: 'Aucun pourboire vérifié à distribuer', en: 'No verified tips to distribute', ar: 'لا توجد إكراميات مؤكدة للتوزيع' }), { type: 'info' });
-    return toast(tr({fr:'Pourboires distribués · 1 867 MAD', en:'Tips distributed · 1 867 MAD', ar:'تم توزيع البقشيش · 1 867 MAD'}), { type: 'success', desc: tr({fr:'Répartition enregistrée. Prévenez l’équipe : la notification automatique arrive bientôt.', en:'Split recorded. Tell the team — automatic notification coming soon.', ar:'تم تسجيل التوزيع. أخبر الفريق — الإشعار التلقائي قريبًا.'}) });
-  };
-  handlers['export-payroll'] = () => {
-    if (usesOwnData()) return toast(tr({ fr: 'Export de paie non généré', en: 'Payroll export not generated', ar: 'لم يتم إنشاء تصدير الأجور' }), { type: 'info', desc: tr({ fr: 'Aucune source de paie vérifiée n’est disponible.', en: 'No verified payroll source is available.', ar: 'لا يتوفر مصدر أجور مؤكد.' }) });
-    return toast(tr({fr:'Export de paie · avril 2026', en:'Payroll export · April 2026', ar:'تصدير الرواتب · أبريل 2026'}), { type: 'info', desc: tr({fr:'PDF + CSV générés et envoyés à votre comptable.', en:'PDF + CSV generated and sent to your accountant.', ar:'تم إنشاء PDF + CSV وإرسالهما إلى محاسبك.'}) });
-  };
+  handlers['distribute-tips'] = () => toast(tr({fr:'Pourboires distribués · 1 867 MAD', en:'Tips distributed · 1 867 MAD', ar:'تم توزيع البقشيش · 1 867 MAD'}), { type: 'success', desc: tr({fr:'Répartition enregistrée. Prévenez l’équipe : la notification automatique arrive bientôt.', en:'Split recorded. Tell the team — automatic notification coming soon.', ar:'تم تسجيل التوزيع. أخبر الفريق — الإشعار التلقائي قريبًا.'}) });
+  handlers['export-payroll'] = () => toast(tr({fr:'Export de paie · avril 2026', en:'Payroll export · April 2026', ar:'تصدير الرواتب · أبريل 2026'}), { type: 'info', desc: tr({fr:'PDF + CSV générés et envoyés à votre comptable.', en:'PDF + CSV generated and sent to your accountant.', ar:'تم إنشاء PDF + CSV وإرسالهما إلى محاسبك.'}) });
 
   /* ═══════════════════ Sidebar nav router ═══════════════════
    * Single source of truth for the highlight is Kiwi.activePage. On nav
