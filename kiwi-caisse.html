@@ -1003,7 +1003,11 @@
       line-height: 1;
       transition: background 150ms ease, color 150ms ease, transform 100ms ease;
       flex: 0 0 28px;
+      position: relative;
     }
+    /* Cible tactile 48px sans grossir le disque : la zone cliquable déborde
+       du visuel (norme till — un doigt pressé ne vise pas à 28px). */
+    .step-btn::after { content: ''; position: absolute; inset: -10px; border-radius: 50%; }
     .step-btn:active { transform: scale(0.94); }
     .step-minus {
       background: rgba(184, 82, 69, 0.12);
@@ -1228,6 +1232,67 @@
       box-shadow: var(--shadow-1);
     }
     .pay-icon svg { width: 23px; height: 23px; }
+    /* Le « Charge $X » des vraies caisses : l'élément le plus proéminent du
+       ticket. Libellé à gauche, total vivant à droite. */
+    .pay-charge {
+      height: 62px;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: var(--gradient);
+      color: #fff;
+      box-shadow: var(--shadow-1);
+    }
+    .pay-charge:hover { filter: brightness(1.06); }
+    .pay-charge-lbl { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
+    .pay-charge-total { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; font-feature-settings: "tnum" 1; }
+    /* Pavé « Montant libre » du builder — clés ≥48px, style marque. */
+    .mlibre-bar { margin: 2px 0 12px; }
+    .mlibre-toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 9px 14px; border-radius: 999px;
+      background: var(--paper-mute);
+      font-size: 13px; font-weight: 600; color: var(--ink-2);
+      transition: background 150ms ease, color 150ms ease;
+    }
+    .mlibre-toggle:hover { background: #ECEAE5; }
+    .mlibre-toggle.is-open { background: var(--forest); color: #fff; }
+    .mlibre-toggle svg { width: 15px; height: 15px; }
+    .mlibre-pad {
+      max-width: 340px;
+      margin: 0 0 16px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-1);
+    }
+    .mlibre-display {
+      font-size: 30px; font-weight: 800; color: var(--ink);
+      font-feature-settings: "tnum" 1; letter-spacing: -0.02em;
+      text-align: right;
+      padding: 4px 8px 12px;
+    }
+    .mlibre-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mlibre-keys button {
+      height: 52px;
+      border-radius: var(--r-lg);
+      background: var(--paper-mute);
+      font-size: 18px; font-weight: 700; color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      transition: background 120ms ease, transform 100ms ease;
+    }
+    .mlibre-keys button:hover { background: #ECEAE5; }
+    .mlibre-keys button:active { transform: scale(0.96); }
+    .mlibre-keys button svg { width: 20px; height: 20px; }
+    .mlibre-add {
+      width: 100%; margin-top: 10px; height: 48px;
+      border-radius: var(--r-lg);
+      background: var(--gradient); color: #fff;
+      font-size: 14px; font-weight: 600;
+      transition: opacity 150ms ease, transform 150ms ease;
+    }
+    .mlibre-add[disabled] { opacity: .35; cursor: not-allowed; }
+    .mlibre-add:not([disabled]):hover { transform: translateY(-1px); }
     #pay-card.pay-icon { background: var(--ink); }
     .pay-split {
       background: var(--paper-mute);
@@ -1417,7 +1482,8 @@
       color: var(--ink-2);
       transition: background 150ms ease;
     }
-    .cash-preset:hover { background: #ECEAE5; }
+    .cash-preset:not([disabled]):hover { background: #ECEAE5; }
+    .cash-preset[disabled] { opacity: .35; cursor: not-allowed; }
 
     .cash-rendu {
       padding: 14px 16px;
@@ -1426,7 +1492,7 @@
       display: flex; justify-content: space-between; align-items: baseline;
     }
     .cash-rendu .lbl { font-size: 13px; color: var(--ink-3); }
-    .cash-rendu .val { font-size: 22px; font-weight: 800; color: var(--ink); font-feature-settings: "tnum" 1; }
+    .cash-rendu .val { font-size: 30px; font-weight: 800; color: var(--ink); font-feature-settings: "tnum" 1; }
     .cash-rendu.is-positive .val { color: var(--emerald); }
     .cash-rendu.is-short .val { color: var(--danger-mute); font-size: 14px; font-weight: 600; }
 
@@ -1445,7 +1511,7 @@
     .cash-confirm:not([disabled]):hover { transform: translateY(-1px); }
 
     .cash-success-rendu {
-      font-size: 36px; font-weight: 800; color: var(--emerald);
+      font-size: 44px; font-weight: 800; color: var(--emerald);
       font-feature-settings: "tnum" 1;
       letter-spacing: -0.02em;
       text-align: center;
@@ -1517,9 +1583,10 @@
     .nt-chip.is-active { background: var(--forest); color: #fff; }
     .nt-actions { display: flex; gap: 8px; margin-top: 4px; }
 
-    /* Validate order button in right panel */
-    .pay-validate { background: var(--gradient); color: #fff; }
-    .pay-validate:hover { filter: brightness(1.06); }
+    /* Envoyer en cuisine — secondaire depuis que « Encaisser » est le geste
+       principal en prise de commande (Slice A). */
+    .pay-validate { background: var(--paper-mute); color: var(--forest); height: 48px; font-size: 14px; }
+    .pay-validate:hover { background: #ECEAE5; }
     .pay-cancel-order { background: var(--paper-mute); color: var(--ink-2); height: 44px; font-size: 13px; font-weight: 500; }
     .pay-cancel-order:hover { background: #ECEAE5; }
 
@@ -1868,7 +1935,7 @@
     .split-part-paid-label { font-size: 12px; font-weight: 600; color: var(--forest); margin-top: 2px; }
     .split-part-btns { display: flex; gap: 6px; flex: 0 0 auto; }
     .split-part-btn {
-      padding: 8px 12px; border-radius: 999px;
+      padding: 10px 14px; min-height: 44px; border-radius: 999px;
       font-size: 12px; font-weight: 600;
       display: flex; align-items: center; gap: 5px;
       transition: transform 100ms, opacity 150ms;
@@ -4978,6 +5045,32 @@
             <i data-lucide="arrow-left"></i><span>Commandes à emporter</span>
           </button>
           <div class="cat-pills" data-lens-demo id="cat-pills" role="tablist"></div>
+          <!-- Montant libre — le pavé numérique de vente rapide (façon SumUp) :
+               tape un prix, « Ajouter », et une ligne « Article libre » sonne
+               dans l'addition. Pour tout ce qui n'est pas au catalogue. -->
+          <div class="mlibre-bar">
+            <button class="mlibre-toggle" id="mlibre-toggle" aria-expanded="false" aria-controls="mlibre-pad">
+              <i data-lucide="calculator"></i><span>Montant libre</span>
+            </button>
+          </div>
+          <div class="mlibre-pad" id="mlibre-pad" hidden>
+            <div class="mlibre-display mono" id="mlibre-display">0</div>
+            <div class="mlibre-keys">
+              <button data-mk="7">7</button>
+              <button data-mk="8">8</button>
+              <button data-mk="9">9</button>
+              <button data-mk="4">4</button>
+              <button data-mk="5">5</button>
+              <button data-mk="6">6</button>
+              <button data-mk="1">1</button>
+              <button data-mk="2">2</button>
+              <button data-mk="3">3</button>
+              <button data-mk=".">,</button>
+              <button data-mk="0">0</button>
+              <button data-mk="back" aria-label="Effacer"><i data-lucide="delete"></i></button>
+            </div>
+            <button class="mlibre-add" id="mlibre-add" disabled>Ajouter à l'addition</button>
+          </div>
           <div class="menu-grid" id="menu-grid"></div>
         </div>
       </section>
@@ -5080,6 +5173,13 @@
           </button>
           <!-- Normal payment buttons (salle read-to-pay + vrap) -->
           <div id="rp-pay-normal">
+            <!-- Le geste principal d'une caisse : encaisser. Total affiché sur
+                 le bouton (façon « Charge 47,50 ») ; ouvre le flux espèces —
+                 la carte, le QR et le partage restent juste en dessous. -->
+            <button class="pay-btn pay-charge" id="pay-charge" title="Encaisser en espèces · F2">
+              <span class="pay-charge-lbl"><i data-lucide="banknote"></i>Encaisser</span>
+              <span class="pay-charge-total mono" id="pay-charge-total">0,00 MAD</span>
+            </button>
             <div class="pay-row">
               <button class="pay-btn pay-icon" id="pay-card" aria-label="Payer par carte · F3" title="Payer par carte · F3">
                 <i data-lucide="credit-card"></i>
@@ -5102,8 +5202,14 @@
               </button>
             </div>
           </div>
-          <!-- Order-mode buttons (new table being built) -->
+          <!-- Order-mode buttons (new table being built). « Encaisser » reste
+               disponible pendant la prise de commande : il envoie d'abord les
+               lignes non parties en cuisine, puis ouvre l'encaissement. -->
           <div id="rp-pay-order" hidden>
+            <button class="pay-btn pay-charge" id="pay-charge-order" title="Encaisser la mesa">
+              <span class="pay-charge-lbl"><i data-lucide="banknote"></i>Encaisser</span>
+              <span class="pay-charge-total mono" id="pay-charge-order-total">0,00 MAD</span>
+            </button>
             <button class="pay-btn pay-validate" id="validate-order">
               <i data-lucide="check-circle-2"></i>
               <span>Envoyer en cuisine</span>
@@ -5345,13 +5451,17 @@
       <div class="cash-grid" id="cash-step-input">
         <div class="cash-input-row">
           <label class="cash-input-label" for="cash-received">Flous reçu</label>
-          <input class="cash-input mono" id="cash-received" type="number" inputmode="numeric" min="0" step="1" value="530" />
+          <input class="cash-input mono" id="cash-received" type="number" inputmode="decimal" min="0" step="0.01" value="530" />
         </div>
-        <div class="cash-presets" aria-label="Ajout rapide">
-          <button class="cash-preset" data-add="50">+50</button>
-          <button class="cash-preset" data-add="100">+100</button>
-          <button class="cash-preset" data-add="200">+200</button>
-          <button class="cash-preset" data-add="500">+500</button>
+        <!-- Montants suggérés façon Loyverse/Square : un tap RÈGLE « Flous
+             reçu » au billet tendu (plus d'addition +50). Les billets trop
+             petits pour couvrir le dû se désactivent dans updateRendu(). -->
+        <div class="cash-presets" aria-label="Montant reçu">
+          <button class="cash-preset" data-set="exact">Exact</button>
+          <button class="cash-preset" data-set="50">50</button>
+          <button class="cash-preset" data-set="100">100</button>
+          <button class="cash-preset" data-set="200">200</button>
+          <button class="cash-preset" data-set="500">500</button>
         </div>
         <div class="cash-rendu" id="cash-rendu">
           <span class="lbl">Rendu</span>
@@ -7601,6 +7711,54 @@
       pushCartLine(item, []);
     }
 
+    /* Slice B — « Montant libre » : une ligne à prix ouvert ringée dans
+       l'addition (vente rapide) ou sur la table en cours (prise de commande). */
+    function addOpenLine(amount) {
+      const amt = money(amount);
+      if (!(amt > 0)) return;
+      if (mode === 'order' && selectedId) {
+        (tableOrders[selectedId] = tableOrders[selectedId] || []).push({
+          uid: newLineUid(), id: 'libre', name: 'Article libre', price: amt, qty: 1, note: ''
+        });
+        renderOrderPanel(selectedId);
+      } else {
+        cart.push({ uid: newLineUid(), id: 'libre', name: 'Article libre', price: amt,
+                    qty: 1, note: '', opts: [], optSig: '' });
+        renderCart();
+      }
+      toast('Article libre · ' + fmtMAD(amt));
+    }
+    (function () {
+      const mlToggle = $('#mlibre-toggle');
+      const mlPad = $('#mlibre-pad');
+      const mlDisplay = $('#mlibre-display');
+      const mlAdd = $('#mlibre-add');
+      if (!mlToggle || !mlPad) return;
+      let buf = '';
+      const val = () => parseFloat(buf.replace(',', '.')) || 0;
+      function paint() {
+        mlDisplay.textContent = buf ? buf.replace('.', ',') : '0';
+        mlAdd.disabled = !(val() > 0);
+      }
+      mlToggle.addEventListener('click', () => {
+        const open = mlPad.hidden;
+        mlPad.hidden = !open;
+        mlToggle.classList.toggle('is-open', open);
+        mlToggle.setAttribute('aria-expanded', String(open));
+      });
+      mlPad.addEventListener('click', (e) => {
+        const key = e.target.closest('[data-mk]');
+        if (!key) return;
+        const k = key.dataset.mk;
+        if (k === 'back') buf = buf.slice(0, -1);
+        else if (k === '.') { if (!buf.includes('.')) buf = (buf || '0') + '.'; }
+        else if (buf.replace('.', '').length < 6) buf += k;
+        paint();
+      });
+      mlAdd.addEventListener('click', () => { addOpenLine(val()); buf = ''; paint(); });
+      paint();
+    })();
+
 
     /* Cart panel +/- — targets one specific line by its uid. */
     function changeCartLineQty(uid, delta) {
@@ -7790,9 +7948,10 @@
       }
     });
     document.addEventListener('keydown', (e) => {
-      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches?.(TBL_SEL)) {
+      const a = document.activeElement;
+      if ((e.key === 'Enter' || e.key === ' ') && (a?.matches?.(TBL_SEL) || a?.matches?.('.menu-item'))) {
         e.preventDefault();
-        document.activeElement.click();
+        a.click();
       }
     });
 
@@ -7961,7 +8120,9 @@
       return parseFloat(payTipMode) || 0;
     }
     function payTipAmount() {
-      return Math.round(currentTotal() * payTipPct() / 100);
+      /* money(), pas Math.round : un pourboire de 5 % sur 47,50 doit rendre
+         2,38 — l'arrondi au dirham entier faussait le rendu au centime près. */
+      return money(currentTotal() * payTipPct() / 100);
     }
     /* Itemised lines for the receipt of the sale being tendered (non-split).
        Table → generateOrder; vente rapida → the cart. */
@@ -8062,7 +8223,11 @@
       }
     });
 
+    /* Le QR passe par le modal carte mais doit s'enregistrer comme 'qr' au
+       journal — sinon chaque paiement mobile compte comme une carte. */
+    let cardTenderMethod = 'card';
     function openCardModal() {
+      cardTenderMethod = 'card';
       // Reset to pulsing state
       $('#card-modal-title').textContent = 'Payer par carte';
       reader.disc.classList.remove('is-success', 'flash');
@@ -8124,7 +8289,7 @@
       const saleLabel = mode === 'vrap'
         ? (vrapEditingNum != null ? 'À emporter #' + vrapEditingNum : 'À emporter')
         : (selectedId || 'Table');
-      if (!splitPayCallback) recordSale(tenderBase, 'card', saleLabel, payTipAmount(), currentSaleLines());
+      if (!splitPayCallback) recordSale(tenderBase, cardTenderMethod, saleLabel, payTipAmount(), currentSaleLines());
       if (splitPayCallback) {
         const cb = splitPayCallback;
         splitPayCallback = null;
@@ -8141,6 +8306,7 @@
     $('#pay-card').addEventListener('click', openCardModal);
     $('#pay-qr').addEventListener('click', function () {
       openCardModal();
+      cardTenderMethod = 'qr';
       var title = document.getElementById('card-modal-title');
       if (title) title.textContent = 'Paiement QR';
       if (reader && reader.status) reader.status.textContent = 'Scannez le QR, paiement mobile';
@@ -8209,6 +8375,11 @@
         cashRenduVal.textContent = 'Insuffisant · manque ' + fmtMAD(total - got);
         cashConfirm.disabled = true;
       }
+      // Un billet trop petit pour couvrir le dû ne sert à rien : on le grise.
+      $$('.cash-preset').forEach(b => {
+        if (!b.dataset.set || b.dataset.set === 'exact') return;
+        b.disabled = parseFloat(b.dataset.set) < total;
+      });
     }
     function openCashModal() {
       cashStepInput.hidden = false;
@@ -8248,9 +8419,38 @@
     }
     $('#pay-cash').addEventListener('click', openCashModal);
     cashInput.addEventListener('input', updateRendu);
+    /* « Encaisser » — le geste principal (Slice A). En vente rapide il ouvre
+       le flux espèces ; en prise de commande il envoie d'abord les lignes en
+       cuisine, puis ouvre le même flux. */
+    $('#pay-charge').addEventListener('click', () => {
+      if (!(currentTotal() > 0)) { toast('Addition vide'); return; }
+      openCashModal();
+    });
+    $('#pay-charge-order').addEventListener('click', () => {
+      if (!selectedId) return;
+      if (orderInProgressCount() > 0) validateOrder(selectedId);
+      if (currentTotal() > 0) openCashModal();
+      else toast('Addition vide');
+    });
+    /* Le total vit dans #rp-total ; on le recopie sur les deux boutons
+       Encaisser (observer, pas de deuxième source de vérité). */
+    (function () {
+      const src = document.getElementById('rp-total');
+      const t1 = document.getElementById('pay-charge-total');
+      const t2 = document.getElementById('pay-charge-order-total');
+      if (!src) return;
+      const sync = () => { const v = src.textContent.trim(); if (t1) t1.textContent = v; if (t2) t2.textContent = v; };
+      new MutationObserver(sync).observe(src, { childList: true, characterData: true, subtree: true });
+      sync();
+    })();
+    /* Un tap RÈGLE le montant reçu (façon Loyverse) : « Exact » = le dû,
+       un billet = sa valeur. Les presets des autres modales (data-cm-add,
+       data-ho-add, data-ho-vadd) gardent leurs propres handlers. */
     $$('.cash-preset').forEach(btn => {
       btn.addEventListener('click', () => {
-        cashInput.value = (parseFloat(cashInput.value) || 0) + parseFloat(btn.dataset.add);
+        if (!btn.dataset.set || btn.disabled) return;
+        const due = currentTotal() + payTipAmount();
+        cashInput.value = btn.dataset.set === 'exact' ? money(due) : parseFloat(btn.dataset.set);
         updateRendu();
       });
     });
@@ -8264,7 +8464,9 @@
       cashStepSuccess.hidden = false;
       cashStepSuccess.style.display = 'flex';
       cashSuccessRendu.textContent = fmtMADcents(change);
-      window.CaisseFx && window.CaisseFx.confetti(document.querySelector('.reader-disc') || document.getElementById('rp-total'));
+      /* Le premier .reader-disc du DOM est celui du modal carte — viser
+         explicitement le disque du succès espèces. */
+      window.CaisseFx && window.CaisseFx.confetti(document.querySelector('#cash-step-success .reader-disc') || document.getElementById('rp-total'));
       lucide.createIcons();
     });
     cashModal.addEventListener('click', (e) => {
@@ -9294,6 +9496,11 @@
           parts.push({
             weight: amt,
             label: items || 'Part équilibrée',
+            /* Chaque part garde ses lignes pour que le ticket imprimé du
+               convive liste ses articles, pas juste un montant. */
+            lines: Object.entries(cart).map(([name, qty]) => ({
+              name, qty, total: money(qty * (splitState.itemTotals[name]?.unitPrice || 0)),
+            })),
             paid: false, payMethod: null,
           });
         }
@@ -9334,10 +9541,10 @@
           </div>
           <div class="split-part-btns">
             <button class="split-part-btn carte" data-pay-part="${idx}" data-pay-method="carte" aria-label="Payer par carte">
-              <i data-lucide="credit-card"></i>
+              <i data-lucide="credit-card"></i><span>Carte</span>
             </button>
             <button class="split-part-btn cash-dark" data-pay-part="${idx}" data-pay-method="cash" aria-label="Payer en espèces">
-              <i data-lucide="banknote"></i>
+              <i data-lucide="banknote"></i><span>Espèces</span>
             </button>
           </div>
         </div>`;
@@ -9371,7 +9578,7 @@
       const p = splitState.flow.parts[partIdx];
       const tip = money(p.tip || 0);
       const base = money(p.base != null ? p.base : (p.amount - tip));
-      recordSale(base, method === 'carte' ? 'card' : 'cash', (splitState.sourceLabel || 'Table') + ' · part ' + (partIdx + 1), tip);
+      recordSale(base, method === 'carte' ? 'card' : 'cash', (splitState.sourceLabel || 'Table') + ' · part ' + (partIdx + 1), tip, p.lines);
       p.paid = true;
       p.payMethod = method;
       splitState.flow.paidCount++;
@@ -10549,6 +10756,10 @@
           greetEl.setAttribute('aria-hidden', 'true');
         }
         document.body.classList.add('is-unlocked');
+        /* Slice D — la caisse s'ouvre sur le registre (vente rapide) :
+           ringuer à zéro tap ; la salle reste à un tap. */
+        setMode('vrap');
+        setVrapView('builder');
         if (shellEl)  shellEl.classList.add('is-entering');
         if (topbarEl) topbarEl.classList.add('is-entering');
         setTimeout(() => {
@@ -14271,6 +14482,9 @@
       const greet = document.querySelector('[data-kiwi-greet]'); if (greet) greet.remove();
       document.body.classList.add('is-unlocked');
       renderSalle();
+      /* Slice D — même atterrissage qu'après l'animation : le registre. */
+      setMode('vrap');
+      setVrapView('builder');
       renderShiftStats();
       renderCashierCard();
       if (window.lucide) lucide.createIcons();
