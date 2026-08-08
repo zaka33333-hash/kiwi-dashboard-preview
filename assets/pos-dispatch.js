@@ -3,7 +3,7 @@
  * ---------------------------------------------------------------------------
  * The kiwi-caisse PIN screen routes one 4-digit code per vertical:
  *
- *   0000  pressing            (assets/pressing-caisse.js — its own module)
+ *   0000  pressing            Pressing Marshan
  *   0001  écran cuisine (KDS) (built into kiwi-caisse.html)
  *   0002  boutique            Maison Mansour
  *   0003  spa / bien-être     Spa Bahia
@@ -49,6 +49,11 @@
   'use strict';
 
   const REGISTRY = {
+    /* '0000' n'est PAS un index de tableau canonique — la clé reste une chaîne
+     * et Object.entries() garde l'ordre d'insertion. Le pressing est donc un
+     * vertical ordinaire, en tête de liste, et non plus une branche codée en
+     * dur dans kiwi-caisse.html. */
+    '0000': { id: 'pressing',    file: 'pressing-caisse', label: 'Pressing · Pressing Marshan' },
     '0002': { id: 'boutique',    file: 'pos-boutique',    label: 'Boutique · Maison Mansour' },
     '0003': { id: 'spa',         file: 'pos-spa',         label: 'Spa · Spa Bahia' },
     '0004': { id: 'hotel',       file: 'pos-hotel',       label: 'Hôtel / Riad · Riad Yasmina' },
@@ -126,10 +131,21 @@
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = `assets/${entry.file}.css`;
+      /* On attend aussi la feuille du vertical avant de résoudre — sans ça,
+         le premier montage sur réseau lent flashe un chrome sans style.
+         Fail-soft : onerror ou 2,5 s débloquent quand même le montage. */
+      const cssReady = new Promise((done) => {
+        link.onload = link.onerror = () => done();
+        setTimeout(done, 2500);
+      });
       document.head.appendChild(link);
+      /* L'ADN partagé (caisse-dna.css) doit rester après la feuille du
+         vertical dans la cascade — on repousse son <link> en fin de <head>. */
+      const dna = document.getElementById('caisse-dna-css');
+      if (dna) document.head.appendChild(dna);
       const sc = document.createElement('script');
       sc.src = `assets/${entry.file}.js`;
-      sc.onload = () => (apps[entry.id] ? resolve() : reject(new Error(`${entry.file}.js loaded but never registered "${entry.id}"`)));
+      sc.onload = () => cssReady.then(() => (apps[entry.id] ? resolve() : reject(new Error(`${entry.file}.js loaded but never registered "${entry.id}"`))));
       sc.onerror = () => reject(new Error(`assets/${entry.file}.js introuvable`));
       document.head.appendChild(sc);
     });
@@ -289,9 +305,10 @@
     panel.setAttribute('aria-label', 'Codes de la démo');
     panel.innerHTML = `
       <div class="vx-codes-title">Codes de la démo, un métier par code</div>
-      <div class="vx-code-row"><b>0000</b><span>Pressing · Pressing Marshan</span></div>
-      <div class="vx-code-row"><b>0001</b><span>Écran cuisine (station KDS)</span></div>
-      ${Object.entries(REGISTRY).map(([pin, e]) => `<div class="vx-code-row"><b>${pin}</b><span>${e.label}</span></div>`).join('')}
+      ${Object.entries(REGISTRY)
+          .concat([['0001', { label: 'Écran cuisine (station KDS)' }]])
+          .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+          .map(([pin, e]) => `<div class="vx-code-row"><b>${pin}</b><span>${e.label}</span></div>`).join('')}
       <div class="vx-code-row mut"><b>····</b><span>Tout autre code → caisse restaurant (Café Atlas)</span></div>`;
     pinScreen.appendChild(panel);
     foot.addEventListener('click', () => panel.classList.toggle('is-open'));
